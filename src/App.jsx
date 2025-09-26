@@ -6,16 +6,34 @@ import { Label } from '@/components/ui/label.jsx'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group.jsx'
 import { Textarea } from '@/components/ui/textarea.jsx'
 import { Badge } from '@/components/ui/badge.jsx'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select.jsx'
+import { Checkbox } from '@/components/ui/checkbox.jsx'
 import { Car, CheckCircle, ArrowRight, ArrowLeft, Star, User, MapPin, DollarSign, Fuel } from 'lucide-react'
 import carDatabase from './carDatabase.js'
 import './App.css'
 
 function App() {
-  const [currentStage, setCurrentStage] = useState(0) // 0: Welcome, 1: Stage 1, 2: Stage 2, 3: Stage 3, 4: Results
+  const [currentStage, setCurrentStage] = useState(0)
   const [answers, setAnswers] = useState({})
   const [topCars, setTopCars] = useState([])
   const [finalRecommendation, setFinalRecommendation] = useState(null)
+
+  const handleAnswerChange = (questionId, value) => {
+    setAnswers(prev => ({
+      ...prev,
+      [questionId]: value
+    }))
+  }
+
+  const handleMultiSelectChange = (questionId, value, isChecked) => {
+    setAnswers(prev => {
+      const currentValues = prev[questionId] || []
+      if (isChecked) {
+        return { ...prev, [questionId]: [...currentValues, value] }
+      } else {
+        return { ...prev, [questionId]: currentValues.filter(item => item !== value) }
+      }
+    })
+  }
 
   const stage1Questions = [
     {
@@ -67,6 +85,13 @@ function App() {
         { value: "Rural", label: "Rural" },
         { value: "Mixed", label: "Mixed" }
       ]
+    },
+    {
+      id: "countryRegion",
+      question: "Which country or region do you primarily drive in? (e.g., USA, Europe, Asia)",
+      type: "text",
+      icon: <MapPin className="h-5 w-5" />,
+      placeholder: "e.g., Europe"
     },
     {
       id: "purchaseType",
@@ -132,8 +157,8 @@ function App() {
     },
     {
       id: "bodyStyle",
-      question: "Do you have a preferred body style?",
-      type: "radio",
+      question: "Do you have a preferred body style? (Select all that apply)",
+      type: "checkbox",
       icon: <Car className="h-5 w-5" />,
       options: [
         { value: "Sedan", label: "Sedan" },
@@ -147,8 +172,8 @@ function App() {
     },
     {
       id: "fuelType",
-      question: "What is your preferred fuel type?",
-      type: "radio",
+      question: "What is your preferred fuel type? (Select all that apply)",
+      type: "checkbox",
       icon: <Fuel className="h-5 w-5" />,
       options: [
         { value: "Gasoline", label: "Gasoline" },
@@ -175,7 +200,7 @@ function App() {
       question: "What are your top 3 must-have features?",
       type: "textarea",
       icon: <CheckCircle className="h-5 w-5" />,
-      placeholder: "e.g., Advanced Driver-Assistance Systems (ADAS), specific infotainment system, premium sound, panoramic sunroof, heated/ventilated seats, remote start..."
+      placeholder: "e.g., ADAS, infotainment system, premium sound, panoramic sunroof, heated/ventilated seats, remote start..."
     },
     {
       id: "dealBreakerFeatures",
@@ -237,21 +262,21 @@ function App() {
       question: "Imagine you've test-driven these cars. Which felt most comfortable and intuitive?",
       type: "radio",
       icon: <Car className="h-5 w-5" />,
-      options: [] // Will be populated with top 3 cars
+      options: []
     },
     {
       id: "specificScenario",
       question: "Consider your most frequent or challenging driving scenario. Which of these cars best addresses that scenario?",
       type: "radio",
       icon: <MapPin className="h-5 w-5" />,
-      options: [] // Will be populated with top 3 cars
+      options: []
     },
     {
       id: "longTermOwnership",
       question: "Looking 3-5 years down the road, which car do you envision yourself being most satisfied with?",
       type: "radio",
       icon: <Star className="h-5 w-5" />,
-      options: [] // Will be populated with top 3 cars
+      options: []
     },
     {
       id: "emotionalConnection",
@@ -262,176 +287,133 @@ function App() {
     }
   ]
 
-  const handleAnswerChange = (questionId, value) => {
-    setAnswers(prev => ({
-      ...prev,
-      [questionId]: value
-    }))
-  }
+  const calculateScore = (car, currentAnswers) => {
+    let score = 0;
 
-  const filterCarsStage1 = () => {
-    let filtered = [...carDatabase]
+    // Demographics
+    if (currentAnswers.gender && car.demographics.gender.includes(currentAnswers.gender)) score += 2;
+    if (currentAnswers.ageGroup && car.demographics.ageGroup.includes(currentAnswers.ageGroup)) score += 2;
+    if (currentAnswers.drivingExperience && car.demographics.drivingExperience.includes(currentAnswers.drivingExperience)) score += 2;
 
-    // Filter by demographics
-    if (answers.gender && answers.gender !== "Prefer not to say") {
-      filtered = filtered.filter(car => 
-        car.demographics.gender.includes(answers.gender)
-      )
+    // Location
+    if (currentAnswers.locationType && car.locationType.includes(currentAnswers.locationType)) score += 3;
+
+    // Budget
+    let minPrice = 0, maxPrice = Infinity;
+    switch (currentAnswers.budget) {
+      case "Under $15,000": maxPrice = 14999; break;
+      case "$15,000 - $25,000": minPrice = 15000; maxPrice = 25000; break;
+      case "$25,000 - $40,000": minPrice = 25000; maxPrice = 40000; break;
+      case "$40,000 - $60,000": minPrice = 40000; maxPrice = 60000; break;
+      case "$60,000 - $80,000": minPrice = 60000; maxPrice = 80000; break;
+      case "Over $80,000": minPrice = 80001; break;
+    }
+    let carPrice = 0;
+    if (currentAnswers.purchaseType === "New Car" && car.price.new) {
+      carPrice = car.price.new;
+    } else if (currentAnswers.purchaseType === "Used Car") {
+      switch (currentAnswers.usedCarAge) {
+        case "1-2 years old": carPrice = car.price.used_1_year || car.price.new; break;
+        case "3-5 years old": carPrice = car.price.used_3_year || car.price.used_1_year || car.price.new; break;
+        case "6-10 years old": carPrice = car.price.used_5_year || car.price.used_3_year || car.price.used_1_year || car.price.new; break;
+        case "10+ years old": carPrice = car.price.used_10_year || car.price.used_5_year || car.price.used_3_year || car.price.used_1_year || car.price.new; break;
+        default: carPrice = car.price.new;
+      }
+    } else {
+      carPrice = car.price.new;
+    }
+    if (carPrice >= minPrice && carPrice <= maxPrice) score += 5; // High importance for budget
+
+    // Body Style
+    if (currentAnswers.bodyStyle && currentAnswers.bodyStyle.length > 0) {
+      if (currentAnswers.bodyStyle.some(style => car.bodyStyle.includes(style))) score += 4;
     }
 
-    if (answers.ageGroup) {
-      filtered = filtered.filter(car => 
-        car.demographics.ageGroup.includes(answers.ageGroup)
-      )
+    // Fuel Type
+    if (currentAnswers.fuelType && currentAnswers.fuelType.length > 0 && !currentAnswers.fuelType.includes("No Strong Preference")) {
+      if (currentAnswers.fuelType.some(type => car.fuelType.includes(type))) score += 4;
     }
 
-    if (answers.drivingExperience) {
-      filtered = filtered.filter(car => 
-        car.demographics.drivingExperience.includes(answers.drivingExperience)
-      )
-    }
+    // Passengers
+    if (currentAnswers.passengers && car.passengers === currentAnswers.passengers) score += 3;
 
-    // Filter by location type
-    if (answers.locationType) {
-      filtered = filtered.filter(car => 
-        car.locationType.includes(answers.locationType)
-      )
-    }
+    // Stage 2 refinements
+    if (currentAnswers.drivingPreference && car.performance === currentAnswers.drivingPreference) score += 3;
 
-    // Filter by budget
-    if (answers.budget) {
-      const priceKey = answers.purchaseType === "New Car" ? "new" : 
-                      answers.usedCarAge === "1-2 years old" ? "used_1_year" :
-                      answers.usedCarAge === "3-5 years old" ? "used_3_year" :
-                      "used_5_year"
-      
-      filtered = filtered.filter(car => {
-        const price = car.price[priceKey] || car.price.new
-        switch (answers.budget) {
-          case "Under $15,000":
-            return price < 15000
-          case "$15,000 - $25,000":
-            return price >= 15000 && price <= 25000
-          case "$25,000 - $40,000":
-            return price >= 25000 && price <= 40000
-          case "$40,000 - $60,000":
-            return price >= 40000 && price <= 60000
-          case "$60,000 - $80,000":
-            return price >= 60000 && price <= 80000
-          case "Over $80,000":
-            return price > 80000
-          default:
-            return true
+    // Must-have and deal-breaker features
+    if (currentAnswers.mustHaveFeatures) {
+      const mustHaves = currentAnswers.mustHaveFeatures.toLowerCase().split(',').map(s => s.trim());
+      for (const feature of mustHaves) {
+        if (car.features.some(f => f.toLowerCase().includes(feature))) {
+          score += 2; // Add score for each matching must-have feature
         }
-      })
+      }
+    }
+    if (currentAnswers.dealBreakerFeatures) {
+      const dealBreakers = currentAnswers.dealBreakerFeatures.toLowerCase().split(',').map(s => s.trim());
+      for (const feature of dealBreakers) {
+        if (car.features.some(f => f.toLowerCase().includes(feature))) {
+          return 0; // Disqualify car if it has a deal-breaker
+        }
+      }
     }
 
-    // Filter by body style
-    if (answers.bodyStyle) {
-      filtered = filtered.filter(car => car.bodyStyle === answers.bodyStyle)
-    }
-
-    // Filter by fuel type
-    if (answers.fuelType && answers.fuelType !== "No Strong Preference") {
-      filtered = filtered.filter(car => car.fuelType === answers.fuelType)
-    }
-
-    // Filter by passengers
-    if (answers.passengers) {
-      filtered = filtered.filter(car => car.passengers === answers.passengers)
-    }
-
-    // Sort by relevance (could be enhanced with more sophisticated scoring)
-    filtered.sort((a, b) => {
-      let scoreA = 0, scoreB = 0
-      
-      // Boost score for matching performance preference
-      if (answers.drivingPreference && a.performance === answers.drivingPreference) scoreA += 2
-      if (answers.drivingPreference && b.performance === answers.drivingPreference) scoreB += 2
-      
-      return scoreB - scoreA
-    })
-
-    return filtered.slice(0, 7) // Return top 7 for stage 1
+    return score;
   }
 
-  const filterCarsStage2 = () => {
-    let filtered = [...topCars]
+  const filterAndRankCars = () => {
+    const scoredCars = carDatabase.map(car => ({
+      ...car,
+      score: calculateScore(car, answers)
+    }));
 
-    // Apply stage 2 filtering based on detailed preferences
-    if (answers.drivingPreference) {
-      filtered = filtered.filter(car => car.performance === answers.drivingPreference)
-    }
+    scoredCars.sort((a, b) => b.score - a.score);
 
-    // Sort by additional criteria and take top 5
-    return filtered.slice(0, 5)
-  }
-
-  const filterCarsStage3 = () => {
-    // Return top 3 from stage 2 results
-    return filterCarsStage2().slice(0, 3)
-  }
-
-  const selectFinalCar = () => {
-    const top3 = filterCarsStage3()
-    
-    // Prioritize based on stage 3 answers
-    if (answers.testDriveImpression) {
-      const selectedIndex = parseInt(answers.testDriveImpression)
-      return top3[selectedIndex]
-    }
-    
-    if (answers.longTermOwnership) {
-      const selectedIndex = parseInt(answers.longTermOwnership)
-      return top3[selectedIndex]
-    }
-    
-    return top3[0] // Default to first car
+    return scoredCars.filter(car => car.score > 0); // Only return cars with a positive score
   }
 
   const nextStage = () => {
     if (currentStage === 1) {
-      const filtered = filterCarsStage1()
-      setTopCars(filtered)
+      const rankedCars = filterAndRankCars();
+      setTopCars(rankedCars.slice(0, 7));
     } else if (currentStage === 2) {
-      const filtered = filterCarsStage2()
-      setTopCars(filtered)
-      
-      // Update stage 3 questions with actual car options
-      const top3 = filtered.slice(0, 3)
-      stage3Questions[0].options = top3.map((car, index) => ({
-        value: index.toString(),
-        label: `${car.make} ${car.model}`
-      }))
-      stage3Questions[1].options = top3.map((car, index) => ({
-        value: index.toString(),
-        label: `${car.make} ${car.model}`
-      }))
-      stage3Questions[2].options = top3.map((car, index) => ({
-        value: index.toString(),
-        label: `${car.make} ${car.model}`
-      }))
+      const rankedCars = filterAndRankCars();
+      const top5 = rankedCars.slice(0, 5);
+      setTopCars(top5);
+
+      const top3 = top5.slice(0, 3);
+      stage3Questions[0].options = top3.map((car, index) => ({ value: index.toString(), label: `${car.make} ${car.model}` }));
+      stage3Questions[1].options = top3.map((car, index) => ({ value: index.toString(), label: `${car.make} ${car.model}` }));
+      stage3Questions[2].options = top3.map((car, index) => ({ value: index.toString(), label: `${car.make} ${car.model}` }));
     } else if (currentStage === 3) {
-      const finalCar = selectFinalCar()
-      setFinalRecommendation(finalCar)
+      const rankedCars = filterAndRankCars();
+      const top3 = rankedCars.slice(0, 3);
+      let finalCar = top3[0]; // Default to the highest scored car
+
+      if (answers.testDriveImpression && top3[parseInt(answers.testDriveImpression)]) {
+        finalCar = top3[parseInt(answers.testDriveImpression)];
+      } else if (answers.longTermOwnership && top3[parseInt(answers.longTermOwnership)]) {
+        finalCar = top3[parseInt(answers.longTermOwnership)];
+      }
+      setFinalRecommendation(finalCar);
     }
     
-    setCurrentStage(prev => prev + 1)
+    setCurrentStage(prev => prev + 1);
   }
 
   const prevStage = () => {
-    setCurrentStage(prev => prev - 1)
+    setCurrentStage(prev => prev - 1);
   }
 
   const shouldShowQuestion = (question) => {
-    if (!question.conditional) return true
-    return answers[question.conditional.dependsOn] === question.conditional.value
+    if (!question.conditional) return true;
+    return answers[question.conditional.dependsOn] === question.conditional.value;
   }
 
-  const renderQuestion = (question, stageQuestions) => {
-    if (!shouldShowQuestion(question)) return null
+  const renderQuestion = (question) => {
+    if (!shouldShowQuestion(question)) return null;
     
-    const currentAnswer = answers[question.id] || ""
+    const currentAnswer = answers[question.id];
 
     return (
       <Card key={question.id} className="mb-6">
@@ -444,7 +426,7 @@ function App() {
         <CardContent>
           {question.type === "radio" && (
             <RadioGroup
-              value={currentAnswer}
+              value={currentAnswer || ""}
               onValueChange={(value) => handleAnswerChange(question.id, value)}
             >
               {question.options.map((option) => (
@@ -455,16 +437,30 @@ function App() {
               ))}
             </RadioGroup>
           )}
+          {question.type === "checkbox" && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {question.options.map((option) => (
+                <div key={option.value} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={option.value}
+                    checked={currentAnswer && currentAnswer.includes(option.value)}
+                    onCheckedChange={(isChecked) => handleMultiSelectChange(question.id, option.value, isChecked)}
+                  />
+                  <Label htmlFor={option.value}>{option.label}</Label>
+                </div>
+              ))}
+            </div>
+          )}
           {question.type === "text" && (
             <Input
-              value={currentAnswer}
+              value={currentAnswer || ""}
               onChange={(e) => handleAnswerChange(question.id, e.target.value)}
-              placeholder="Enter your answer..."
+              placeholder={question.placeholder || "Enter your answer..."}
             />
           )}
           {question.type === "textarea" && (
             <Textarea
-              value={currentAnswer}
+              value={currentAnswer || ""}
               onChange={(e) => handleAnswerChange(question.id, e.target.value)}
               placeholder={question.placeholder || "Enter your answer..."}
               rows={3}
@@ -475,33 +471,45 @@ function App() {
     )
   }
 
-  const renderCarCard = (car, index) => {
-    const priceKey = answers.purchaseType === "New Car" ? "new" : 
-                    answers.usedCarAge === "1-2 years old" ? "used_1_year" :
-                    answers.usedCarAge === "3-5 years old" ? "used_3_year" :
-                    "used_5_year"
-    const price = car.price[priceKey] || car.price.new
+  const renderCarCard = (car) => {
+    let price = 0;
+    if (answers.purchaseType === "New Car" && car.price.new) {
+      price = car.price.new;
+    } else if (answers.purchaseType === "Used Car") {
+      switch (answers.usedCarAge) {
+        case "1-2 years old": price = car.price.used_1_year || car.price.new; break;
+        case "3-5 years old": price = car.price.used_3_year || car.price.used_1_year || car.price.new; break;
+        case "6-10 years old": price = car.price.used_5_year || car.price.used_3_year || car.price.used_1_year || car.price.new; break;
+        case "10+ years old": price = car.price.used_10_year || car.price.used_5_year || car.price.used_3_year || car.price.used_1_year || car.price.new; break;
+        default: price = car.price.new;
+      }
+    } else {
+      price = car.price.new;
+    }
 
     return (
       <Card key={car.id} className="mb-4 hover:shadow-lg transition-shadow">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Car className="h-5 w-5" />
-            {car.make} {car.model} ({car.year})
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Car className="h-5 w-5" />
+              {car.make} {car.model} ({car.year})
+            </div>
+            <Badge variant="secondary">Score: {car.score}</Badge>
           </CardTitle>
           <CardDescription className="text-lg font-semibold text-green-600">
-            ${price.toLocaleString()}
+            {price ? `$${price.toLocaleString()}` : 'Price N/A'}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
               <p className="text-sm text-gray-600">Body Style</p>
-              <p className="font-medium">{car.bodyStyle}</p>
+              <p className="font-medium">{car.bodyStyle.join(', ')}</p>
             </div>
             <div>
               <p className="text-sm text-gray-600">Fuel Type</p>
-              <p className="font-medium">{car.fuelType}</p>
+              <p className="font-medium">{car.fuelType.join(', ')}</p>
             </div>
             <div>
               <p className="text-sm text-gray-600">Performance</p>
@@ -535,15 +543,24 @@ function App() {
 
   const isStageComplete = () => {
     if (currentStage === 1) {
-      const requiredFields = ['gender', 'ageGroup', 'drivingExperience', 'locationType', 'purchaseType', 'budget', 'primaryUse', 'passengers', 'bodyStyle', 'fuelType']
-      return requiredFields.every(field => answers[field])
+      const requiredFields = ["gender", "ageGroup", "drivingExperience", "locationType", "countryRegion", "purchaseType", "budget", "primaryUse", "passengers"]
+      const allRequiredAnswered = requiredFields.every(field => answers[field])
+      const fuelTypeAnswered = answers.fuelType && answers.fuelType.length > 0
+      const bodyStyleAnswered = answers.bodyStyle && answers.bodyStyle.length > 0
+
+      const usedCarAgeAnswered = answers.purchaseType === "Used Car" ? (answers.usedCarAge !== undefined) : true
+
+      return allRequiredAnswered && fuelTypeAnswered && bodyStyleAnswered && usedCarAgeAnswered
     }
     if (currentStage === 2) {
-      const requiredFields = ['drivingPreference', 'enginePowerImportance', 'brandImportance', 'reliabilityVsInnovation']
+      const requiredFields = ["drivingPreference", "enginePowerImportance", "brandImportance", "reliabilityVsInnovation"]
       return requiredFields.every(field => answers[field])
     }
     if (currentStage === 3) {
-      return answers.testDriveImpression || answers.longTermOwnership
+      return (answers.testDriveImpression !== undefined && answers.testDriveImpression !== '') || 
+             (answers.specificScenario !== undefined && answers.specificScenario !== '') || 
+             (answers.longTermOwnership !== undefined && answers.longTermOwnership !== '') || 
+             (answers.emotionalConnection !== undefined && answers.emotionalConnection !== '')
     }
     return true
   }
@@ -589,8 +606,8 @@ function App() {
             </CardHeader>
             <CardContent>
               <p className="mb-6 text-gray-700">
-                Through our sophisticated three-stage questioning methodology, I'll understand your unique demographic profile, 
-                lifestyle preferences, and specific requirements to recommend the ideal car for you. We'll progressively narrow 
+                Through our sophisticated three-stage questioning methodology, I'll understand your unique demographic profile,
+                lifestyle preferences, and specific requirements to recommend the ideal car for you. We'll progressively narrow
                 down from our comprehensive database to find your perfect match.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -626,9 +643,9 @@ function App() {
                 </CardDescription>
               </CardHeader>
             </Card>
-            
-            {stage1Questions.map((question) => renderQuestion(question, stage1Questions))}
-            
+
+            {stage1Questions.map((question) => renderQuestion(question))}
+
             <div className="flex justify-between">
               <Button variant="outline" onClick={prevStage}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
@@ -649,24 +666,28 @@ function App() {
               <CardHeader>
                 <CardTitle>Stage 2: Your Top Cars & Detailed Preferences</CardTitle>
                 <CardDescription>
-                  Based on your profile, here are your top car recommendations. Now let's refine to your top 3-5 finalists.
+                  Based on your profile, here are your top {topCars.length} car recommendations. Now let's refine to your top 3-5 finalists.
                 </CardDescription>
               </CardHeader>
             </Card>
 
             <div className="mb-6">
               <h3 className="text-xl font-semibold mb-4">Your Top {topCars.length} Car Recommendations:</h3>
-              {topCars.map((car, index) => renderCarCard(car, index))}
+              {topCars.length > 0 ? (
+                topCars.map((car) => renderCarCard(car))
+              ) : (
+                <p className="text-gray-600">No cars matched your criteria from Stage 1. Please go back and adjust your answers.</p>
+              )}
             </div>
-            
-            {stage2Questions.map((question) => renderQuestion(question, stage2Questions))}
-            
+
+            {stage2Questions.map((question) => renderQuestion(question))}
+
             <div className="flex justify-between">
               <Button variant="outline" onClick={prevStage}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back
               </Button>
-              <Button onClick={nextStage} disabled={!isStageComplete()}>
+              <Button onClick={nextStage} disabled={!isStageComplete() || topCars.length === 0}>
                 Continue to Final Selection
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
@@ -681,24 +702,28 @@ function App() {
               <CardHeader>
                 <CardTitle>Stage 3: Final Selection from Your Top 3</CardTitle>
                 <CardDescription>
-                  These are your final 3 car options. Let's find the one that truly resonates with you.
+                  These are your final {topCars.slice(0,3).length} car options. Let's find the one that truly resonates with you.
                 </CardDescription>
               </CardHeader>
             </Card>
 
             <div className="mb-6">
-              <h3 className="text-xl font-semibold mb-4">Your Top 3 Finalists:</h3>
-              {filterCarsStage3().map((car, index) => renderCarCard(car, index))}
+              <h3 className="text-xl font-semibold mb-4">Your Top {topCars.slice(0,3).length} Finalists:</h3>
+              {topCars.slice(0,3).length > 0 ? (
+                topCars.slice(0,3).map((car) => renderCarCard(car))
+              ) : (
+                <p className="text-gray-600">No cars matched your criteria from Stage 2. Please go back and adjust your answers.</p>
+              )}
             </div>
-            
-            {stage3Questions.map((question) => renderQuestion(question, stage3Questions))}
-            
+
+            {stage3Questions.map((question) => renderQuestion(question))}
+
             <div className="flex justify-between">
               <Button variant="outline" onClick={prevStage}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back
               </Button>
-              <Button onClick={nextStage} disabled={!isStageComplete()}>
+              <Button onClick={nextStage} disabled={!isStageComplete() || topCars.slice(0,3).length === 0}>
                 Get My Perfect Car
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
@@ -735,11 +760,11 @@ function App() {
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
                     <p className="text-sm text-gray-600">Body Style</p>
-                    <p className="font-medium">{finalRecommendation.bodyStyle}</p>
+                    <p className="font-medium">{finalRecommendation.bodyStyle.join(', ')}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Fuel Type</p>
-                    <p className="font-medium">{finalRecommendation.fuelType}</p>
+                    <p className="font-medium">{finalRecommendation.fuelType.join(', ')}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Performance</p>
@@ -750,13 +775,13 @@ function App() {
                     <p className="font-medium">{finalRecommendation.passengers}</p>
                   </div>
                 </div>
-                
+
                 <div className="flex flex-wrap gap-2 mb-4">
                   {finalRecommendation.features.map((feature) => (
                     <Badge key={feature} variant="default" className="bg-green-100 text-green-800">{feature}</Badge>
                   ))}
                 </div>
-                
+
                 <div className="bg-blue-50 p-4 rounded-lg">
                   <h4 className="font-semibold mb-2">Why This Car is Perfect for You:</h4>
                   <ul className="text-sm space-y-1">
@@ -789,3 +814,4 @@ function App() {
 }
 
 export default App
+
