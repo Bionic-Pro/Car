@@ -387,7 +387,7 @@ function App() {
       icon: <AlertTriangle className="h-5 w-5 text-red-500" />,
       options: [
         { value: "no_apple_carplay", label: "No Apple CarPlay" },
-        { value: "no_android_auto", label: "No Android Auto" },
+        { value: "no_android_auto", label: "No Apple CarPlay/Android Auto" },
         { value: "no_awd", label: "No AWD/4WD option" },
         { value: "poor_safety_ratings", label: "Poor safety ratings" },
         { value: "low_mpg", label: "Low fuel efficiency" },
@@ -397,17 +397,6 @@ function App() {
         { value: "no_ev_option", label: "No electric/hybrid option" },
         { value: "none", label: "No deal-breakers" }
       ]
-    }
-      type: "textarea",
-      icon: <CheckCircle className="h-5 w-5" />,
-      placeholder: "e.g., ADAS, infotainment system, premium sound, panoramic sunroof, heated/ventilated seats, remote start..."
-    },
-    {
-      id: "dealBreakerFeatures",
-      question: "Are there any absolute deal-breaker features or options?",
-      type: "textarea",
-      icon: <CheckCircle className="h-5 w-5" />,
-      placeholder: "e.g., Manual transmission, cloth seats, lack of Apple CarPlay/Android Auto..."
     },
     {
       id: "drivingPreference",
