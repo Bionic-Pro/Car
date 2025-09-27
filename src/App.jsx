@@ -7,7 +7,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group.jsx'
 import { Textarea } from '@/components/ui/textarea.jsx'
 import { Badge } from '@/components/ui/badge.jsx'
 import { Checkbox } from '@/components/ui/checkbox.jsx'
-import { Car, CheckCircle, ArrowRight, ArrowLeft, Star, User, MapPin, DollarSign, Fuel } from 'lucide-react'
+import { Car, CheckCircle, ArrowRight, ArrowLeft, Star, User, MapPin, DollarSign, Fuel, ParkingMeter, Clock, CloudSnow, CloudRain, Sun, Thermometer, Home, Briefcase, Heart, Award, Shield, Wifi, Music, Smartphone, Bluetooth, Navigation, Zap, Battery, Leaf, Wind, Gauge, Settings, Calendar, Clock as ClockIcon, AlertTriangle } from 'lucide-react'
 import carDatabase from './carDatabase.js'
 import './App.css'
 
@@ -38,13 +38,15 @@ function App() {
   const stage1Questions = [
     {
       id: "gender",
-      question: "What is your gender?",
+      question: "What is your gender? (Optional)",
       type: "radio",
       icon: <User className="h-5 w-5" />,
+      optional: true,
       options: [
         { value: "Male", label: "Male" },
         { value: "Female", label: "Female" },
         { value: "Non-binary", label: "Non-binary" },
+        { value: "Other", label: "Other (please specify)", hasInput: true },
         { value: "Prefer not to say", label: "Prefer not to say" }
       ]
     },
@@ -54,13 +56,14 @@ function App() {
       type: "radio",
       icon: <User className="h-5 w-5" />,
       options: [
-        { value: "Under 18", label: "Under 18" },
-        { value: "18-24", label: "18-24" },
+        { value: "Under 21", label: "Under 21" },
+        { value: "21-24", label: "21-24" },
         { value: "25-34", label: "25-34" },
         { value: "35-44", label: "35-44" },
         { value: "45-54", label: "45-54" },
         { value: "55-64", label: "55-64" },
-        { value: "65+", label: "65+" }
+        { value: "65-74", label: "65-74" },
+        { value: "75+", label: "75+" }
       ]
     },
     {
@@ -69,29 +72,33 @@ function App() {
       type: "radio",
       icon: <Car className="h-5 w-5" />,
       options: [
-        { value: "Novice", label: "Novice (less than 2 years)" },
-        { value: "Experienced", label: "Experienced (2-10 years)" },
-        { value: "Veteran", label: "Veteran (more than 10 years)" }
+        { value: "First-time driver", label: "First-time driver (0-1 year)" },
+        { value: "Novice", label: "Novice (1-3 years)" },
+        { value: "Experienced", label: "Experienced (3-10 years)" },
+        { value: "Veteran", label: "Veteran (10-20 years)" },
+        { value: "Expert", label: "Expert (20+ years)" }
       ]
     },
     {
       id: "locationType",
-      question: "What best describes your primary location?",
+      question: "What best describes your primary driving location?",
       type: "radio",
       icon: <MapPin className="h-5 w-5" />,
       options: [
-        { value: "Urban/City", label: "Urban/City" },
+        { value: "Dense Urban", label: "Dense Urban (e.g., Manhattan, Tokyo)" },
+        { value: "Urban", label: "Urban (city with good infrastructure)" },
         { value: "Suburban", label: "Suburban" },
-        { value: "Rural", label: "Rural" },
-        { value: "Mixed", label: "Mixed" }
+        { value: "Rural (good roads)", label: "Rural with good roads" },
+        { value: "Rural (poor roads)", label: "Rural with poor roads" },
+        { value: "Mountainous/Challenging", label: "Mountainous/Challenging terrain" }
       ]
     },
     {
       id: "countryRegion",
-      question: "Which country or region do you primarily drive in? (e.g., USA, Europe, Asia)",
+      question: "Which country or region do you primarily drive in?",
       type: "text",
       icon: <MapPin className="h-5 w-5" />,
-      placeholder: "e.g., Europe"
+      placeholder: "e.g., United States, Germany, Japan"
     },
     {
       id: "purchaseType",
@@ -100,7 +107,8 @@ function App() {
       icon: <DollarSign className="h-5 w-5" />,
       options: [
         { value: "New Car", label: "New Car" },
-        { value: "Used Car", label: "Used Car" }
+        { value: "Used Car", label: "Used Car", hasInput: true },
+        { value: "Not sure yet", label: "Not sure yet" }
       ]
     },
     {
@@ -109,10 +117,12 @@ function App() {
       type: "radio",
       icon: <DollarSign className="h-5 w-5" />,
       options: [
+        { value: "1 year old or less", label: "1 year old or less" },
         { value: "1-2 years old", label: "1-2 years old" },
         { value: "3-5 years old", label: "3-5 years old" },
         { value: "6-10 years old", label: "6-10 years old" },
-        { value: "10+ years old", label: "10+ years old" }
+        { value: "10+ years old", label: "10+ years old" },
+        { value: "Vintage/Classic", label: "Vintage/Classic car" }
       ],
       conditional: { dependsOn: "purchaseType", value: "Used Car" }
     },
@@ -122,25 +132,33 @@ function App() {
       type: "radio",
       icon: <DollarSign className="h-5 w-5" />,
       options: [
-        { value: "Under $15,000", label: "Under $15,000" },
-        { value: "$15,000 - $25,000", label: "$15,000 - $25,000" },
-        { value: "$25,000 - $40,000", label: "$25,000 - $40,000" },
-        { value: "$40,000 - $60,000", label: "$40,000 - $60,000" },
-        { value: "$60,000 - $80,000", label: "$60,000 - $80,000" },
-        { value: "Over $80,000", label: "Over $80,000" }
+        { value: "Under $10,000", label: "Under $10,000" },
+        { value: "$10,000 - $20,000", label: "$10,000 - $20,000" },
+        { value: "$20,000 - $30,000", label: "$20,000 - $30,000" },
+        { value: "$30,000 - $45,000", label: "$30,000 - $45,000" },
+        { value: "$45,000 - $65,000", label: "$45,000 - $65,000" },
+        { value: "$65,000 - $90,000", label: "$65,000 - $90,000" },
+        { value: "$90,000 - $120,000", label: "$90,000 - $120,000" },
+        { value: "Over $120,000", label: "Over $120,000" },
+        { value: "Not sure yet", label: "Not sure yet" }
       ]
     },
     {
       id: "primaryUse",
-      question: "What will be the primary use of the car?",
-      type: "radio",
+      question: "What will be the primary use of the car? (Select up to 2)",
+      type: "checkbox",
+      maxSelections: 2,
       icon: <Car className="h-5 w-5" />,
       options: [
-        { value: "Daily Commute", label: "Daily Commute" },
-        { value: "Family Transport", label: "Family Transport" },
-        { value: "Business/Work", label: "Business/Work" },
-        { value: "Recreational/Adventure", label: "Recreational/Adventure" },
-        { value: "Performance Driving", label: "Performance Driving" }
+        { value: "Daily Commute", label: "🚗 Daily Commute" },
+        { value: "Family Transport", label: "👨‍👩‍👧‍👦 Family Transport" },
+        { value: "Business/Work", label: "💼 Business/Work" },
+        { value: "Ride Sharing", label: "🚖 Ride Sharing (Uber/Lyft)" },
+        { value: "Adventure/Off-road", label: "🌲 Adventure/Off-road" },
+        { value: "Performance Driving", label: "🏎️ Performance Driving" },
+        { value: "Towing/Hauling", label: "🚛 Towing/Hauling" },
+        { value: "Weekend Car", label: "🌅 Weekend Car" },
+        { value: "Luxury/Status", label: "💎 Luxury/Status" }
       ]
     },
     {
@@ -149,55 +167,237 @@ function App() {
       type: "radio",
       icon: <User className="h-5 w-5" />,
       options: [
-        { value: "1-2", label: "1-2 passengers" },
-        { value: "3-4", label: "3-4 passengers" },
-        { value: "5+", label: "5+ passengers" },
-        { value: "Often carry pets", label: "Often carry pets" }
+        { value: "Just me", label: "Just me" },
+        { value: "1-2 passengers", label: "1-2 passengers" },
+        { value: "3-4 passengers", label: "3-4 passengers" },
+        { value: "5+ passengers", label: "5+ passengers" },
+        { value: "Pets only", label: "Mostly pets" },
+        { value: "Varies a lot", label: "Varies a lot" }
       ]
     },
     {
       id: "bodyStyle",
-      question: "Do you have a preferred body style? (Select all that apply)",
+      question: "What type of vehicle are you interested in? (Select up to 3)",
       type: "checkbox",
+      maxSelections: 3,
       icon: <Car className="h-5 w-5" />,
       options: [
-        { value: "Sedan", label: "Sedan" },
-        { value: "SUV/Crossover", label: "SUV/Crossover" },
-        { value: "Truck", label: "Truck" },
-        { value: "Hatchback", label: "Hatchback" },
-        { value: "Minivan", label: "Minivan" },
-        { value: "Coupe/Sports Car", label: "Coupe/Sports Car" },
-        { value: "Wagon", label: "Wagon" }
+        { value: "Sedan", label: "🚗 Sedan" },
+        { value: "SUV", label: "🚙 SUV" },
+        { value: "Crossover", label: "🏢 Crossover" },
+        { value: "Truck", label: "🛻 Truck" },
+        { value: "Hatchback", label: "🚙 Hatchback" },
+        { value: "Minivan", label: "🚐 Minivan" },
+        { value: "Sports Car", label: "🏎️ Sports Car" },
+        { value: "Convertible", label: "🚗💨 Convertible" },
+        { value: "Wagon", label: "🚙 Wagon" },
+        { value: "Electric Vehicle", label: "🔌 Electric Vehicle" },
+        { value: "Hybrid", label: "🔋 Hybrid" },
+        { value: "Luxury", label: "💎 Luxury Vehicle" }
       ]
     },
     {
       id: "fuelType",
-      question: "What is your preferred fuel type? (Select all that apply)",
+      question: "What type of fuel do you prefer? (Select up to 2)",
       type: "checkbox",
+      maxSelections: 2,
       icon: <Fuel className="h-5 w-5" />,
       options: [
-        { value: "Gasoline", label: "Gasoline" },
-        { value: "Diesel", label: "Diesel" },
-        { value: "Full Hybrid (HEV)", label: "Full Hybrid (HEV)" },
-        { value: "Plug-in Hybrid (PHEV)", label: "Plug-in Hybrid (PHEV)" },
-        { value: "Battery Electric (BEV)", label: "Battery Electric (BEV)" },
-        { value: "LPG/GPL", label: "LPG/GPL" },
-        { value: "Hydrogen Fuel Cell (FCEV)", label: "Hydrogen Fuel Cell (FCEV)" },
-        { value: "No Strong Preference", label: "No Strong Preference" }
+        { value: "Gasoline", label: "⛽ Gasoline" },
+        { value: "Diesel", label: "⛽ Diesel" },
+        { value: "Hybrid (HEV)", label: "🔋 Hybrid (HEV)" },
+        { value: "Plug-in Hybrid (PHEV)", label: "🔌 Plug-in Hybrid" },
+        { value: "Electric (BEV)", label: "⚡ Electric (BEV)" },
+        { value: "Hydrogen (FCEV)", label: "💧 Hydrogen (FCEV)" },
+        { value: "Flex Fuel", label: "🔄 Flex Fuel" },
+        { value: "No Preference", label: "🤷 No Preference" }
       ]
     },
     {
       id: "currentCar",
       question: "What is your current or most recent car? (Make, Model, Year)",
       type: "text",
-      icon: <Car className="h-5 w-5" />
+      icon: <Car className="h-5 w-5" />,
+      optional: true,
+      placeholder: "e.g., Toyota Camry 2020"
     }
   ]
 
   const stage2Questions = [
     {
       id: "mustHaveFeatures",
-      question: "What are your top 3 must-have features?",
+      question: "Select your must-have features (choose 3-5)",
+      type: "checkbox",
+      maxSelections: 5,
+      icon: <Star className="h-5 w-5" />,
+      categories: [
+        {
+          name: "Safety",
+          icon: <Shield className="h-4 w-4" />,
+          options: [
+            { value: "adaptive_cruise", label: "Adaptive Cruise Control" },
+            { value: "blind_spot", label: "Blind Spot Monitoring" },
+            { value: "emergency_braking", label: "Automatic Emergency Braking" },
+            { value: "lane_keep", label: "Lane Keeping Assist" },
+            { value: "rear_cross_traffic", label: "Rear Cross-Traffic Alert" },
+            { value: "surround_cam", label: "360° Camera System" },
+            { value: "night_vision", label: "Night Vision" },
+            { value: "head_up_display", label: "Head-Up Display" }
+          ]
+        },
+        {
+          name: "Comfort & Convenience",
+          icon: <Home className="h-4 w-4" />,
+          options: [
+            { value: "heated_seats", label: "Heated Seats" },
+            { value: "ventilated_seats", label: "Ventilated/Cooled Seats" },
+            { value: "massage_seats", label: "Massage Seats" },
+            { value: "panoramic_roof", label: "Panoramic Sunroof" },
+            { value: "power_liftgate", label: "Power Liftgate" },
+            { value: "remote_start", label: "Remote Start" },
+            { value: "hands_free_liftgate", label: "Hands-Free Liftgate" },
+            { value: "air_suspension", label: "Air Suspension" }
+          ]
+        },
+        {
+          name: "Technology",
+          icon: <Wifi className="h-4 w-4" />,
+          options: [
+            { value: "apple_carplay", label: "Apple CarPlay" },
+            { value: "android_auto", label: "Android Auto" },
+            { value: "wireless_charging", label: "Wireless Charging" },
+            { value: "premium_audio", label: "Premium Audio System" },
+            { value: "wireless_apple_carplay", label: "Wireless Apple CarPlay" },
+            { value: "digital_key", label: "Digital Key (Phone as Key)" },
+            { value: "wifi_hotspot", label: "WiFi Hotspot" },
+            { value: "rear_seat_entertainment", label: "Rear Seat Entertainment" }
+          ]
+        },
+        {
+          name: "Performance",
+          icon: <Gauge className="h-4 w-4" />,
+          options: [
+            { value: "awd", label: "All-Wheel Drive (AWD/4WD)" },
+            { value: "sport_mode", label: "Sport Mode" },
+            { value: "launch_control", label: "Launch Control" },
+            { value: "adjustable_suspension", label: "Adjustable Suspension" },
+            { value: "towing_package", label: "Towing Package" },
+            { value: "off_road_package", label: "Off-Road Package" },
+            { value: "performance_brakes", label: "Performance Brakes" },
+            { value: "limited_slip_diff", label: "Limited-Slip Differential" }
+          ]
+        },
+        {
+          name: "Climate",
+          icon: <Thermometer className="h-4 w-4" />,
+          options: [
+            { value: "dual_zone_climate", label: "Dual-Zone Climate Control" },
+            { value: "rear_ac_vents", label: "Rear AC Vents" },
+            { value: "heated_steering_wheel", label: "Heated Steering Wheel" },
+            { value: "heated_rear_seats", label: "Heated Rear Seats" },
+            { value: "cooled_seats", label: "Cooled/Ventilated Seats" },
+            { value: "remote_climate", label: "Remote Climate Control" },
+            { value: "windshield_deicer", label: "Windshield De-Icer" },
+            { value: "heated_washer_nozzles", label: "Heated Washer Nozzles" }
+          ]
+        }
+      ]
+    },
+    {
+      id: "parkingSituation",
+      question: "What is your typical parking situation?",
+      type: "radio",
+      icon: <ParkingMeter className="h-5 w-5" />,
+      options: [
+        { value: "street", label: "Street Parking" },
+        { value: "driveway", label: "Private Driveway" },
+        { value: "garage", label: "Private Garage" },
+        { value: "underground", label: "Underground Parking" },
+        { value: "carport", label: "Carport" },
+        { value: "tight_space", label: "Limited/Small Parking Space" },
+        { value: "assigned_parking", label: "Assigned Parking Spot" },
+        { value: "no_dedicated", label: "No Dedicated Parking" }
+      ]
+    },
+    {
+      id: "annualMileage",
+      question: "How many miles/kilometers do you drive annually?",
+      type: "radio",
+      icon: <Gauge className="h-5 w-5" />,
+      options: [
+        { value: "under_5k", label: "Under 5,000 mi (8,000 km)" },
+        { value: "5k_10k", label: "5,000 - 10,000 mi (8,000 - 16,000 km)" },
+        { value: "10k_15k", label: "10,000 - 15,000 mi (16,000 - 24,000 km)" },
+        { value: "15k_20k", label: "15,000 - 20,000 mi (24,000 - 32,000 km)" },
+        { value: "over_20k", label: "Over 20,000 mi (32,000 km)" }
+      ]
+    },
+    {
+      id: "climateConditions",
+      question: "What climate conditions do you typically drive in? (Select all that apply)",
+      type: "checkbox",
+      icon: <CloudSnow className="h-5 w-5" />,
+      options: [
+        { value: "hot", label: "☀️ Hot (consistently above 30°C/86°F)" },
+        { value: "cold", label: "❄️ Cold (frequently below freezing)" },
+        { value: "snow", label: "🌨️ Heavy snow" },
+        { value: "rain", label: "🌧️ Heavy rain" },
+        { value: "mild", label: "🌤️ Mild/temperate" },
+        { value: "humid", label: "💦 Humid" },
+        { value: "dry", label: "🏜️ Dry/desert" },
+        { value: "mountainous", label: "⛰️ Mountainous terrain" }
+      ]
+    },
+    {
+      id: "ownershipDuration",
+      question: "How long do you plan to keep this vehicle?",
+      type: "radio",
+      icon: <ClockIcon className="h-5 w-5" />,
+      options: [
+        { value: "1-2_years", label: "1-2 years" },
+        { value: "3-5_years", label: "3-5 years" },
+        { value: "5-7_years", label: "5-7 years" },
+        { value: "7-10_years", label: "7-10 years" },
+        { value: "10+_years", label: "10+ years" },
+        { value: "indefinitely", label: "As long as it runs" }
+      ]
+    },
+    {
+      id: "priorityFactors",
+      question: "Rank these factors by importance (drag to reorder)",
+      type: "sortable",
+      icon: <Settings className="h-5 w-5" />,
+      options: [
+        { value: "reliability", label: "🔧 Reliability" },
+        { value: "safety", label: "🛡️ Safety" },
+        { value: "fuel_efficiency", label: "⛽ Fuel Efficiency" },
+        { value: "performance", label: "🚀 Performance" },
+        { value: "comfort", label: "🛋️ Comfort" },
+        { value: "tech_features", label: "📱 Technology" },
+        { value: "cargo_space", label: "🧳 Cargo Space" },
+        { value: "resale_value", label: "💰 Resale Value" },
+        { value: "environmental_impact", label: "🌱 Environmental Impact" },
+        { value: "brand_prestige", label: "🏆 Brand Prestige" }
+      ]
+    },
+    {
+      id: "dealBreakers",
+      question: "Are there any absolute deal-breakers for you? (Select all that apply)",
+      type: "checkbox",
+      icon: <AlertTriangle className="h-5 w-5 text-red-500" />,
+      options: [
+        { value: "no_apple_carplay", label: "No Apple CarPlay" },
+        { value: "no_android_auto", label: "No Android Auto" },
+        { value: "no_awd", label: "No AWD/4WD option" },
+        { value: "poor_safety_ratings", label: "Poor safety ratings" },
+        { value: "low_mpg", label: "Low fuel efficiency" },
+        { value: "small_trunk", label: "Insufficient cargo space" },
+        { value: "expensive_maintenance", label: "Expensive maintenance" },
+        { value: "limited_availability", label: "Limited availability in my area" },
+        { value: "no_ev_option", label: "No electric/hybrid option" },
+        { value: "none", label: "No deal-breakers" }
+      ]
+    }
       type: "textarea",
       icon: <CheckCircle className="h-5 w-5" />,
       placeholder: "e.g., ADAS, infotainment system, premium sound, panoramic sunroof, heated/ventilated seats, remote start..."
